@@ -453,7 +453,7 @@ class Manager:
             self.new_log['result'] = 'unknown'
         
         self.new_log['img_path'] = json.dumps(img_paths)
-        self.new_log['begin_time'] = last_normal_time - timedelta(days=1)
+        self.new_log['begin_time'] = last_normal_time
         self.new_log['begin_weight'] = last_normal
         
         # 5. 回到原位置

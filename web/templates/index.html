@@ -1,95 +1,328 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
-    <title>宠物投喂器</title>
+    <title>🐾 宠物投喂器</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #667eea;
+            font-size: 1.5em;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        h3 {
+            color: #555;
+            font-size: 1.2em;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        #status {
+            display: inline-block;
+            margin-left: 15px;
+            padding: 8px 16px;
+            background: #e8f4f8;
+            border-radius: 15px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .video-box {
+            width: 100%;
+            max-width: 640px;
+            height: 480px;
+            background: #2c3e50;
+            border-radius: 15px;
+            margin: 20px auto;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .video-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .video-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #bdc3c7;
+            height: 100%;
+            font-size: 18px;
+        }
+
+        .servo-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            gap: 10px;
+            justify-content: center;
+            margin: 20px auto;
+        }
+
+        .servo-controls button {
+            width: 80px;
+            height: 80px;
+            font-size: 28px;
+            border-radius: 15px;
+        }
+
+        input[type="number"] {
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            width: 100px;
+            margin: 5px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        #schedule-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        #schedule-list li {
+            background: #f8f9fa;
+            padding: 12px 20px;
+            margin: 8px 0;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #schedule-list button {
+            background: #e74c3c;
+            padding: 6px 16px;
+            font-size: 14px;
+        }
+
+        #schedule-list button:hover {
+            background: #c0392b;
+        }
+
+        .weight-chart-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .log-table-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .log-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s;
+        }
+
+        .log-item:hover {
+            transform: translateX(5px);
+        }
+
+        .log-time {
+            color: #666;
+            font-size: 14px;
+            min-width: 150px;
+        }
+
+        .log-result {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 16px;
+            flex: 1;
+            text-align: center;
+        }
+
+        .log-consume {
+            color: #e74c3c;
+            font-weight: 600;
+            font-size: 18px;
+            min-width: 100px;
+            text-align: right;
+        }
+
+        .daily-table-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .daily-item {
+            background: white;
+            padding: 12px 20px;
+            margin: 8px 0;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .daily-day {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .daily-total {
+            color: #27ae60;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .controls-group {
+            margin: 10px 0;
+        }
+    </style>
 </head>
+
 <body>
-    <h1>🐾 宠物投喂器</h1>
-    
-    <h2>手动投喂</h2>
-    <button onclick="feed()">点击投喂</button>
-    <div id="status">准备就绪</div>
-    
-    <h2>摄像头</h2>
-    <div>
-        <button onclick="toggleCamera()">显示/隐藏视频</button>
-        <button onclick="capturePhoto()">拍照</button>
-    </div>
-    
-    <div id="video-placeholder">点击"显示视频"查看实时画面</div>
-    <img id="video-stream" style="display: none;" src="/api/video/video-stream" width="640" height="480">
-    
-    <h2>云台控制</h2>
-    <div>
-        <div></div>
-        <button onclick="moveServo('up')">↑</button>
-        <div></div>
-        <button onclick="moveServo('left')">←</button>
-        <button onclick="moveServo('home')">○</button>
-        <button onclick="moveServo('right')">→</button>
-        <div></div>
-        <button onclick="moveServo('down')">↓</button>
-        <div></div>
-    </div>
-    
-    <h2>定时投喂</h2>
-    <div>
-        <input type="number" id="hour" min="0" max="23" placeholder="时">
-        <input type="number" id="minute" min="0" max="59" placeholder="分">
-        <button onclick="addSchedule()">添加定时</button>
-    </div>
-    
-    <h3>定时列表</h3>
-    <ul id="schedule-list"></ul>
-    
-    <h2>自动投喂开关</h2>
-    <div>
-        <button onclick="enableAuto()">启用自动</button>
-        <button onclick="disableAuto()">禁用自动</button>
-    </div>
+    <div class="container">
+        <h1>🐾 宠物投喂器</h1>
 
-    <hr>
+        <h2>手动投喂</h2>
+        <div class="controls-group">
+            <button onclick="feed()">点击投喂</button>
+            <span id="status">准备就绪</span>
+        </div>
 
-    <h2>实时重量</h2>
-    <div>
-        <button onclick="startWeight()">开启</button>
-        <button onclick="stopWeight()">关闭</button>
+        <h2>摄像头</h2>
+        <div class="controls-group">
+            <button onclick="toggleCamera()">显示/隐藏视频</button>
+            <button onclick="capturePhoto()">拍照</button>
+        </div>
+
+        <div class="video-box">
+            <div id="video-placeholder" class="video-placeholder">点击"显示视频"查看实时画面</div>
+            <img id="video-stream" style="display: none;" src="/api/video/video-stream">
+        </div>
+
+        <h2>云台控制</h2>
+        <div class="servo-controls">
+            <div></div>
+            <button onclick="moveServo('up')">↑</button>
+            <div></div>
+            <button onclick="moveServo('left')">←</button>
+            <button onclick="moveServo('home')">○</button>
+            <button onclick="moveServo('right')">→</button>
+            <div></div>
+            <button onclick="moveServo('down')">↓</button>
+            <div></div>
+        </div>
+
+        <h2>定时投喂</h2>
+        <div class="controls-group">
+            <input type="number" id="hour" min="0" max="23" placeholder="时">
+            <input type="number" id="minute" min="0" max="59" placeholder="分">
+            <button onclick="addSchedule()">添加定时</button>
+        </div>
+
+        <h3>定时列表</h3>
+        <ul id="schedule-list"></ul>
+
+        <h2>自动投喂开关</h2>
+        <div class="controls-group">
+            <button onclick="enableAuto()">启用自动</button>
+            <button onclick="disableAuto()">禁用自动</button>
+        </div>
+
+        <h2>实时重量</h2>
+        <div class="controls-group">
+            <button onclick="startWeight()">开启</button>
+            <button onclick="stopWeight()">关闭</button>
+        </div>
+        <div class="weight-chart-container">
+            <canvas id="weightChart"></canvas>
+        </div>
+
+        <h2>实时日志</h2>
+        <div class="log-table-container" id="log-container"></div>
+
+        <h2>每日消耗</h2>
+        <div class="daily-table-container" id="daily-container"></div>
     </div>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>时间</th>
-                <th>重量</th>
-            </tr>
-        </thead>
-        <tbody id="weight-table">
-        </tbody>
-    </table>
-
-    <h2>实时日志</h2>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>数据</th>
-            </tr>
-        </thead>
-        <tbody id="log-table">
-        </tbody>
-    </table>
-
-    <h2>每日消耗</h2>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>日期</th>
-                <th>总消耗</th>
-            </tr>
-        </thead>
-        <tbody id="daily-table">
-        </tbody>
-    </table>
 
     <script>
         let cameraOpen = false;
@@ -97,87 +330,177 @@
         let eventSource = null;
         let lastLogId = -1;
         let weightEnabled = false;
-        
-        // 初始化
+        let weightChart = null;
+        let weightData = [];
+        let weightLabels = [];
+        const MAX_WEIGHT_POINTS = 20;
+
+        function initChart() {
+            const ctx = document.getElementById('weightChart').getContext('2d');
+            weightChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: weightLabels,
+                    datasets: [{
+                        label: '重量 (g)',
+                        data: weightData,
+                        borderColor: 'rgb(102, 126, 234)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: '实时重量变化',
+                            font: {
+                                size: 18
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: '时间'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: '重量 (g)'
+                            },
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+        }
+
+        function addWeightData(data) {
+            const time = new Date(data.timestamp);
+            const timeStr = time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            weightData.push(data.weight);
+            weightLabels.push(timeStr);
+
+            if (weightData.length > MAX_WEIGHT_POINTS) {
+                weightData.shift();
+                weightLabels.shift();
+            }
+
+            if (weightChart) {
+                weightChart.update('none');
+            }
+        }
+
+        function addLogItem(data) {
+            const logData = data.data;
+            const container = document.getElementById('log-container');
+
+            const beginTime = logData.begin_time ? new Date(logData.begin_time).toLocaleString('zh-CN') : 'N/A';
+            const result = logData.result || 'unknown';
+            const beginWeight = parseFloat(logData.begin_weight) || 0;
+            const endWeight = parseFloat(logData.end_weight) || 0;
+            const consume = Math.max(0, beginWeight - endWeight).toFixed(2);
+
+            const item = document.createElement('div');
+            item.className = 'log-item';
+            item.innerHTML = `
+                <span class="log-time">${beginTime}</span>
+                <span class="log-result">${result}</span>
+                <span class="log-consume">${consume}g</span>
+            `;
+
+            container.insertBefore(item, container.firstChild);
+
+            while (container.children.length > 50) {
+                container.removeChild(container.lastChild);
+            }
+        }
+
+        function updateDailyConsumption(data) {
+            const container = document.getElementById('daily-container');
+            container.innerHTML = '';
+
+            data.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'daily-item';
+                div.innerHTML = `
+                    <span class="daily-day">${item.day}</span>
+                    <span class="daily-total">${item.total.toFixed(2)}g</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
         async function init() {
             clientId = 'client_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            initChart();
             await loadDailyConsumption();
             await loadInitialLogs();
             connectSSE();
             loadSchedules();
         }
-        
-        // SSE 连接
+
         function connectSSE() {
             const url = '/api/events?client_id=' + clientId + '&last_log_id=' + lastLogId + '&subscribe_weight=' + (weightEnabled ? '1' : '0');
             eventSource = new EventSource(url);
-            
-            eventSource.onopen = function() {
+
+            eventSource.onopen = function () {
                 console.log('SSE 连接已打开');
             };
-            
-            eventSource.onmessage = function(event) {
+
+            eventSource.onmessage = function (event) {
                 console.log('收到消息:', event.data);
             };
-            
-            eventSource.addEventListener('weight', function(event) {
+
+            eventSource.addEventListener('weight', function (event) {
                 const data = JSON.parse(event.data);
-                addWeightRow(data);
+                addWeightData(data);
             });
-            
-            eventSource.addEventListener('log', function(event) {
+
+            eventSource.addEventListener('log', function (event) {
                 const data = JSON.parse(event.data);
-                addLogRow(data);
+                addLogItem(data);
                 if (data.id > lastLogId) {
                     lastLogId = data.id;
                 }
             });
-            
-            eventSource.onerror = function(error) {
+
+            eventSource.onerror = function (error) {
                 console.error('SSE 错误:', error);
                 eventSource.close();
                 setTimeout(connectSSE, 3000);
             };
         }
-        
-        // 添加重量行
-        function addWeightRow(data) {
-            const tbody = document.getElementById('weight-table');
-            const row = tbody.insertRow(0);
-            const timeCell = row.insertCell(0);
-            const weightCell = row.insertCell(1);
-            timeCell.textContent = data.timestamp;
-            weightCell.textContent = data.weight.toFixed(2);
-            
-            if (tbody.rows.length > 20) {
-                tbody.deleteRow(tbody.rows.length - 1);
-            }
-        }
-        
-        // 添加日志行
-        function addLogRow(data) {
-            const tbody = document.getElementById('log-table');
-            const row = tbody.insertRow(0);
-            const idCell = row.insertCell(0);
-            const dataCell = row.insertCell(1);
-            idCell.textContent = data.id;
-            dataCell.textContent = JSON.stringify(data.data);
-            
-            if (tbody.rows.length > 50) {
-                tbody.deleteRow(tbody.rows.length - 1);
-            }
-        }
-        
-        // 加载初始日志
+
         async function loadInitialLogs() {
             try {
                 const response = await fetch('/api/eating-log/get');
                 const result = await response.json();
                 if (result.success && result.records) {
-                    const tbody = document.getElementById('log-table');
-                    tbody.innerHTML = '';
+                    const container = document.getElementById('log-container');
+                    container.innerHTML = '';
                     result.records.forEach(record => {
-                        addLogRow(record);
+                        addLogItem(record);
                         if (record.id > lastLogId) {
                             lastLogId = record.id;
                         }
@@ -187,29 +510,19 @@
                 console.error('加载日志失败:', error);
             }
         }
-        
-        // 加载每日消耗
+
         async function loadDailyConsumption() {
             try {
                 const response = await fetch('/api/daily-consumption/get');
                 const result = await response.json();
                 if (result.success && result.data) {
-                    const tbody = document.getElementById('daily-table');
-                    tbody.innerHTML = '';
-                    result.data.forEach(item => {
-                        const row = tbody.insertRow(0);
-                        const dayCell = row.insertCell(0);
-                        const totalCell = row.insertCell(1);
-                        dayCell.textContent = item.day;
-                        totalCell.textContent = item.total.toFixed(2);
-                    });
+                    updateDailyConsumption(result.data);
                 }
             } catch (error) {
                 console.error('加载每日消耗失败:', error);
             }
         }
-        
-        // 开启重量推送
+
         async function startWeight() {
             weightEnabled = true;
             try {
@@ -219,7 +532,7 @@
                     body: JSON.stringify({ client_id: clientId })
                 });
                 console.log('重量推送已开启');
-                
+
                 if (eventSource) {
                     eventSource.close();
                 }
@@ -228,8 +541,7 @@
                 console.error('开启重量推送失败:', error);
             }
         }
-        
-        // 关闭重量推送
+
         async function stopWeight() {
             weightEnabled = false;
             try {
@@ -239,7 +551,7 @@
                     body: JSON.stringify({ client_id: clientId })
                 });
                 console.log('重量推送已关闭');
-                
+
                 if (eventSource) {
                     eventSource.close();
                 }
@@ -248,17 +560,17 @@
                 console.error('关闭重量推送失败:', error);
             }
         }
-        
+
         async function feed() {
             const statusEl = document.getElementById('status');
             statusEl.textContent = '正在投喂...';
-            
+
             try {
                 const response = await fetch('/hardware/feed-motor/feed', {
                     method: 'POST'
                 });
                 const data = await response.json();
-                
+
                 if (data.success) {
                     statusEl.textContent = '投喂完成！';
                     setTimeout(() => {
@@ -272,13 +584,13 @@
                 statusEl.textContent = '网络错误';
             }
         }
-        
+
         async function toggleCamera() {
             if (cameraOpen) {
                 cameraOpen = false;
                 document.getElementById('video-stream').style.display = 'none';
-                document.getElementById('video-placeholder').style.display = 'block';
-                
+                document.getElementById('video-placeholder').style.display = 'flex';
+
                 try {
                     await fetch('/hardware/camera/close', { method: 'POST' });
                 } catch (error) {
@@ -288,19 +600,19 @@
                 cameraOpen = true;
                 document.getElementById('video-placeholder').style.display = 'none';
                 document.getElementById('video-stream').style.display = 'block';
-                
+
                 const videoImg = document.getElementById('video-stream');
                 videoImg.src = '/api/video/video-stream?' + new Date().getTime();
             }
         }
-        
+
         async function capturePhoto() {
             try {
                 const response = await fetch('/api/video/capture', {
                     method: 'POST'
                 });
                 const data = await response.json();
-                
+
                 if (data.success) {
                     alert('拍照成功！照片已保存：' + data.path);
                 } else {
@@ -311,7 +623,7 @@
                 alert('网络错误');
             }
         }
-        
+
         async function moveServo(direction) {
             if (direction === 'home') {
                 try {
@@ -322,13 +634,13 @@
                 }
                 return;
             }
-            
+
             try {
                 const response = await fetch(`/hardware/servo/move/${direction}`, {
                     method: 'POST'
                 });
                 const data = await response.json();
-                
+
                 if (!data.success) {
                     alert('移动失败！');
                 }
@@ -336,46 +648,46 @@
                 console.error('Error:', error);
             }
         }
-        
+
         async function loadSchedules() {
             try {
                 const response = await fetch('/api/auto-feeder/get', {
                     method: 'POST'
                 });
                 const data = await response.json();
-                
+
                 const listEl = document.getElementById('schedule-list');
                 listEl.innerHTML = '';
-                
+
                 if (data.schedules && data.schedules.length > 0) {
                     data.schedules.forEach(s => {
                         const li = document.createElement('li');
                         li.textContent = `${s.hour.toString().padStart(2, '0')}:${s.minute.toString().padStart(2, '0')}`;
-                        
+
                         const deleteBtn = document.createElement('button');
                         deleteBtn.textContent = '删除';
                         deleteBtn.onclick = () => deleteSchedule(s.hour, s.minute);
-                        
+
                         li.appendChild(deleteBtn);
                         listEl.appendChild(li);
                     });
                 } else {
-                    listEl.innerHTML = '<li>暂无定时任务</li>';
+                    listEl.innerHTML = '<li style="color: #999; text-align: center;">暂无定时任务</li>';
                 }
             } catch (error) {
                 console.error('Error:', error);
             }
         }
-        
+
         async function addSchedule() {
             const hour = parseInt(document.getElementById('hour').value);
             const minute = parseInt(document.getElementById('minute').value);
-            
+
             if (isNaN(hour) || isNaN(minute)) {
                 alert('请输入有效的时间');
                 return;
             }
-            
+
             try {
                 const response = await fetch('/api/auto-feeder/add', {
                     method: 'POST',
@@ -383,7 +695,7 @@
                     body: JSON.stringify({ hour, minute })
                 });
                 const data = await response.json();
-                
+
                 if (data.success) {
                     document.getElementById('hour').value = '';
                     document.getElementById('minute').value = '';
@@ -396,7 +708,7 @@
                 alert('网络错误');
             }
         }
-        
+
         async function deleteSchedule(hour, minute) {
             try {
                 const response = await fetch('/api/auto-feeder/remove', {
@@ -405,7 +717,7 @@
                     body: JSON.stringify({ hour, minute })
                 });
                 const data = await response.json();
-                
+
                 if (data.success) {
                     loadSchedules();
                 } else {
@@ -416,7 +728,7 @@
                 alert('网络错误');
             }
         }
-        
+
         async function enableAuto() {
             try {
                 await fetch('/api/auto-feeder/enable-auto', { method: 'POST' });
@@ -425,7 +737,7 @@
                 console.error('Error:', error);
             }
         }
-        
+
         async function disableAuto() {
             try {
                 await fetch('/api/auto-feeder/disable-auto', { method: 'POST' });
@@ -434,9 +746,9 @@
                 console.error('Error:', error);
             }
         }
-        
-        // 页面加载时初始化
+
         window.onload = init;
     </script>
 </body>
+
 </html>
