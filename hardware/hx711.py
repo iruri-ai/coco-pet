@@ -36,7 +36,7 @@ class Hx711:
         self.measure_interval = measure_interval
         self._is_in_anomaly = False 
         self.last_normal = 0
-        self.last_normal_time = None
+        self.last_normal_time = datetime.now()
 
         # 状态变量
         self.gpio_initialized = False
@@ -127,7 +127,7 @@ class Hx711:
         if not self.gpio_initialized:
             self.setup()
             
-        timeout = 1.0
+        timeout = 0.1
         start_time = time.time()
         while GPIO.input(self.DT):
             time.sleep(0.001)
@@ -160,7 +160,8 @@ class Hx711:
         weight = (raw_value - self.tare_offset) / self.reference_unit
         weight = max(0.0, weight)  
         if self._on_measure:
-            self._on_measure(weight, datetime.now())      
+            self._on_measure(weight, datetime.now()) 
+        print(weight)     
         return weight
         
     def _auto_measure(self):
@@ -174,20 +175,24 @@ class Hx711:
         new_weight = self._read_weight_once()
         # 本次是否变化过大
         if abs(self.current_weight - new_weight) > self.garmmar:
+            
             self.expect_happen_times += 1
             self.normal_happen_times = 0
             # 是否进入异常
             if not self._is_in_anomaly and self.expect_times <= self.expect_happen_times:
                 self._is_in_anomaly = True
+                print("excpet")
                 if self._on_except:
                     self._on_except(self.last_normal, self.last_normal_time)
         else:
+            
             self.last_normal = new_weight
             self.last_normal_time = datetime.now()
             self.normal_happen_times += 1
             self.expect_happen_times = 0
             if self._is_in_anomaly and self.normal_happen_times >= self.normal_times:
                 self._is_in_anomaly = False
+                print("normal")
                 if self._on_normal:
                     self._on_normal(self.last_normal, self.last_normal_time)
         self.current_weight = new_weight

@@ -49,8 +49,205 @@
         <button onclick="disableAuto()">禁用自动</button>
     </div>
 
+    <hr>
+
+    <h2>实时重量</h2>
+    <div>
+        <button onclick="startWeight()">开启</button>
+        <button onclick="stopWeight()">关闭</button>
+    </div>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>时间</th>
+                <th>重量</th>
+            </tr>
+        </thead>
+        <tbody id="weight-table">
+        </tbody>
+    </table>
+
+    <h2>实时日志</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>数据</th>
+            </tr>
+        </thead>
+        <tbody id="log-table">
+        </tbody>
+    </table>
+
+    <h2>每日消耗</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>日期</th>
+                <th>总消耗</th>
+            </tr>
+        </thead>
+        <tbody id="daily-table">
+        </tbody>
+    </table>
+
     <script>
         let cameraOpen = false;
+        let clientId = null;
+        let eventSource = null;
+        let lastLogId = -1;
+        let weightEnabled = false;
+        
+        // 初始化
+        async function init() {
+            clientId = 'client_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            await loadDailyConsumption();
+            await loadInitialLogs();
+            connectSSE();
+            loadSchedules();
+        }
+        
+        // SSE 连接
+        function connectSSE() {
+            const url = '/api/events?client_id=' + clientId + '&last_log_id=' + lastLogId + '&subscribe_weight=' + (weightEnabled ? '1' : '0');
+            eventSource = new EventSource(url);
+            
+            eventSource.onopen = function() {
+                console.log('SSE 连接已打开');
+            };
+            
+            eventSource.onmessage = function(event) {
+                console.log('收到消息:', event.data);
+            };
+            
+            eventSource.addEventListener('weight', function(event) {
+                const data = JSON.parse(event.data);
+                addWeightRow(data);
+            });
+            
+            eventSource.addEventListener('log', function(event) {
+                const data = JSON.parse(event.data);
+                addLogRow(data);
+                if (data.id > lastLogId) {
+                    lastLogId = data.id;
+                }
+            });
+            
+            eventSource.onerror = function(error) {
+                console.error('SSE 错误:', error);
+                eventSource.close();
+                setTimeout(connectSSE, 3000);
+            };
+        }
+        
+        // 添加重量行
+        function addWeightRow(data) {
+            const tbody = document.getElementById('weight-table');
+            const row = tbody.insertRow(0);
+            const timeCell = row.insertCell(0);
+            const weightCell = row.insertCell(1);
+            timeCell.textContent = data.timestamp;
+            weightCell.textContent = data.weight.toFixed(2);
+            
+            if (tbody.rows.length > 20) {
+                tbody.deleteRow(tbody.rows.length - 1);
+            }
+        }
+        
+        // 添加日志行
+        function addLogRow(data) {
+            const tbody = document.getElementById('log-table');
+            const row = tbody.insertRow(0);
+            const idCell = row.insertCell(0);
+            const dataCell = row.insertCell(1);
+            idCell.textContent = data.id;
+            dataCell.textContent = JSON.stringify(data.data);
+            
+            if (tbody.rows.length > 50) {
+                tbody.deleteRow(tbody.rows.length - 1);
+            }
+        }
+        
+        // 加载初始日志
+        async function loadInitialLogs() {
+            try {
+                const response = await fetch('/api/eating-log/get');
+                const result = await response.json();
+                if (result.success && result.records) {
+                    const tbody = document.getElementById('log-table');
+                    tbody.innerHTML = '';
+                    result.records.forEach(record => {
+                        addLogRow(record);
+                        if (record.id > lastLogId) {
+                            lastLogId = record.id;
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('加载日志失败:', error);
+            }
+        }
+        
+        // 加载每日消耗
+        async function loadDailyConsumption() {
+            try {
+                const response = await fetch('/api/daily-consumption/get');
+                const result = await response.json();
+                if (result.success && result.data) {
+                    const tbody = document.getElementById('daily-table');
+                    tbody.innerHTML = '';
+                    result.data.forEach(item => {
+                        const row = tbody.insertRow(0);
+                        const dayCell = row.insertCell(0);
+                        const totalCell = row.insertCell(1);
+                        dayCell.textContent = item.day;
+                        totalCell.textContent = item.total.toFixed(2);
+                    });
+                }
+            } catch (error) {
+                console.error('加载每日消耗失败:', error);
+            }
+        }
+        
+        // 开启重量推送
+        async function startWeight() {
+            weightEnabled = true;
+            try {
+                await fetch('/api/weight-table/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ client_id: clientId })
+                });
+                console.log('重量推送已开启');
+                
+                if (eventSource) {
+                    eventSource.close();
+                }
+                connectSSE();
+            } catch (error) {
+                console.error('开启重量推送失败:', error);
+            }
+        }
+        
+        // 关闭重量推送
+        async function stopWeight() {
+            weightEnabled = false;
+            try {
+                await fetch('/api/weight-table/stop', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ client_id: clientId })
+                });
+                console.log('重量推送已关闭');
+                
+                if (eventSource) {
+                    eventSource.close();
+                }
+                connectSSE();
+            } catch (error) {
+                console.error('关闭重量推送失败:', error);
+            }
+        }
         
         async function feed() {
             const statusEl = document.getElementById('status');
@@ -78,24 +275,20 @@
         
         async function toggleCamera() {
             if (cameraOpen) {
-                // 隐藏视频
                 cameraOpen = false;
                 document.getElementById('video-stream').style.display = 'none';
                 document.getElementById('video-placeholder').style.display = 'block';
                 
-                // 通知后端减少连接计数
                 try {
                     await fetch('/hardware/camera/close', { method: 'POST' });
                 } catch (error) {
                     console.error('Error:', error);
                 }
             } else {
-                // 显示视频
                 cameraOpen = true;
                 document.getElementById('video-placeholder').style.display = 'none';
                 document.getElementById('video-stream').style.display = 'block';
                 
-                // 刷新一下视频流
                 const videoImg = document.getElementById('video-stream');
                 videoImg.src = '/api/video/video-stream?' + new Date().getTime();
             }
@@ -242,8 +435,8 @@
             }
         }
         
-        // 页面加载时获取定时列表
-        loadSchedules();
+        // 页面加载时初始化
+        window.onload = init;
     </script>
 </body>
 </html>

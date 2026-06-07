@@ -107,7 +107,7 @@ class PetRecognizer:
             final_label = "unknown"
         
         return {
-            'final_label': final_label,
+            'label': final_label,
             'all_labels': all_labels,
             'scores': all_scores,
             'img_paths': img_paths

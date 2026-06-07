@@ -60,6 +60,11 @@ class maoDB:
             existing_times = {row[0] for row in cursor.fetchall()}
             inserted = 0
             skipped = 0
+            
+            # 兼容：如果是单个字典，转成列表
+            if isinstance(records, dict):
+                records = [records]
+            
             for record in records:
                 if record.get('begin_time') in existing_times:
                     skipped += 1
@@ -73,13 +78,13 @@ class maoDB:
                     record.get('img_path'),
                     record.get('begin_time'),
                     record.get('begin_weight'),
-                    record.get('end_time'),
+                    record.get('end_time'),      # 注意顺序
                     record.get('end_weight')
                 ))
                 inserted += 1
             conn.commit()
             
-            return {'inserted': inserted, 'skipped': skipped}
+            return {'inserted': inserted, 'skipped': skipped}  
     
     # ==================== 表2：投喂时间表 ====================
     def get_all_schedules(self):

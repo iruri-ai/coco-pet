@@ -81,7 +81,10 @@ class App:
         @self.app.route('/api/daily-consumption/get', methods=['GET', 'POST'])
         def daily_consumption_get():
             return self._call_handler('daily_consumption_get')
-    
+        @self.app.route('/api/events')
+        def events():
+            """SSE 事件流"""
+            return self._call_handler('sse_events')
     def _call_handler(self, handler_name, **kwargs):
         """调用已注册的回调函数"""
         handler = self.routes.get(handler_name)
