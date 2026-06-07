@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>宠物投喂器</title>
+</head>
+<body>
+    <h1>🐾 宠物投喂器</h1>
+    
+    <h2>手动投喂</h2>
+    <button onclick="feed()">点击投喂</button>
+    <div id="status">准备就绪</div>
+    
+    <h2>摄像头</h2>
+    <div>
+        <button onclick="toggleCamera()">显示/隐藏视频</button>
+        <button onclick="capturePhoto()">拍照</button>
+    </div>
+    
+    <div id="video-placeholder">点击"显示视频"查看实时画面</div>
+    <img id="video-stream" style="display: none;" src="/api/video/video-stream" width="640" height="480">
+    
+    <h2>云台控制</h2>
+    <div>
+        <div></div>
+        <button onclick="moveServo('up')">↑</button>
+        <div></div>
+        <button onclick="moveServo('left')">←</button>
+        <button onclick="moveServo('home')">○</button>
+        <button onclick="moveServo('right')">→</button>
+        <div></div>
+        <button onclick="moveServo('down')">↓</button>
+        <div></div>
+    </div>
+    
+    <h2>定时投喂</h2>
+    <div>
+        <input type="number" id="hour" min="0" max="23" placeholder="时">
+        <input type="number" id="minute" min="0" max="59" placeholder="分">
+        <button onclick="addSchedule()">添加定时</button>
+    </div>
+    
+    <h3>定时列表</h3>
+    <ul id="schedule-list"></ul>
+    
+    <h2>自动投喂开关</h2>
+    <div>
+        <button onclick="enableAuto()">启用自动</button>
+        <button onclick="disableAuto()">禁用自动</button>
+    </div>
+
+    <script>
+        let cameraOpen = false;
+        
+        async function feed() {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = '正在投喂...';
+            
+            try {
+                const response = await fetch('/hardware/feed-motor/feed', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusEl.textContent = '投喂完成！';
+                    setTimeout(() => {
+                        statusEl.textContent = '准备就绪';
+                    }, 2000);
+                } else {
+                    statusEl.textContent = '投喂失败';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                statusEl.textContent = '网络错误';
+            }
+        }
+        
+        async function toggleCamera() {
+            if (cameraOpen) {
+                // 隐藏视频
+                cameraOpen = false;
+                document.getElementById('video-stream').style.display = 'none';
+                document.getElementById('video-placeholder').style.display = 'block';
+                
+                // 通知后端减少连接计数
+                try {
+                    await fetch('/hardware/camera/close', { method: 'POST' });
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            } else {
+                // 显示视频
+                cameraOpen = true;
+                document.getElementById('video-placeholder').style.display = 'none';
+                document.getElementById('video-stream').style.display = 'block';
+                
+                // 刷新一下视频流
+                const videoImg = document.getElementById('video-stream');
+                videoImg.src = '/api/video/video-stream?' + new Date().getTime();
+            }
+        }
+        
+        async function capturePhoto() {
+            try {
+                const response = await fetch('/api/video/capture', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('拍照成功！照片已保存：' + data.path);
+                } else {
+                    alert('拍照失败！');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('网络错误');
+            }
+        }
+        
+        async function moveServo(direction) {
+            if (direction === 'home') {
+                try {
+                    await fetch('/hardware/servo/move/home', { method: 'POST' });
+                    alert('云台已归位！');
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/hardware/servo/move/${direction}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (!data.success) {
+                    alert('移动失败！');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        async function loadSchedules() {
+            try {
+                const response = await fetch('/api/auto-feeder/get', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                const listEl = document.getElementById('schedule-list');
+                listEl.innerHTML = '';
+                
+                if (data.schedules && data.schedules.length > 0) {
+                    data.schedules.forEach(s => {
+                        const li = document.createElement('li');
+                        li.textContent = `${s.hour.toString().padStart(2, '0')}:${s.minute.toString().padStart(2, '0')}`;
+                        
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.textContent = '删除';
+                        deleteBtn.onclick = () => deleteSchedule(s.hour, s.minute);
+                        
+                        li.appendChild(deleteBtn);
+                        listEl.appendChild(li);
+                    });
+                } else {
+                    listEl.innerHTML = '<li>暂无定时任务</li>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        async function addSchedule() {
+            const hour = parseInt(document.getElementById('hour').value);
+            const minute = parseInt(document.getElementById('minute').value);
+            
+            if (isNaN(hour) || isNaN(minute)) {
+                alert('请输入有效的时间');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/auto-feeder/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ hour, minute })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('hour').value = '';
+                    document.getElementById('minute').value = '';
+                    loadSchedules();
+                } else {
+                    alert(data.error || '添加失败');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('网络错误');
+            }
+        }
+        
+        async function deleteSchedule(hour, minute) {
+            try {
+                const response = await fetch('/api/auto-feeder/remove', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ hour, minute })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    loadSchedules();
+                } else {
+                    alert(data.error || '删除失败');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('网络错误');
+            }
+        }
+        
+        async function enableAuto() {
+            try {
+                await fetch('/api/auto-feeder/enable-auto', { method: 'POST' });
+                alert('已启用自动投喂');
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        async function disableAuto() {
+            try {
+                await fetch('/api/auto-feeder/disable-auto', { method: 'POST' });
+                alert('已禁用自动投喂');
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        // 页面加载时获取定时列表
+        loadSchedules();
+    </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+    "Hx711": {
+        "sck_pin": 40,
+        "dt_pin": 38,
+        "reference_unit": 413,
+        "tare_offset": -141454,
+        "garmmar": 2,
+        "expect_times": 2,
+        "normal_times": 3,
+        "measure_interval": 2.0
+    },
+    "camera": {
+        "camera_id": 0,
+        "width": 640,
+        "height": 480,
+        "fps": 10
+    },
+    "button": {
+        "pin": 25,
+        "bounce_time": 0.1
+    },
+    "servo": {
+        "horizontal_pin": 24,
+        "vertical_pin": 23,
+        "step": 0.1,
+        "min_pulse": 0.0005,
+        "max_pulse": 0.0025
+    }
+}
