@@ -2,28 +2,75 @@
     "Hx711": {
         "sck_pin": 40,
         "dt_pin": 38,
-        "reference_unit": 413,
-        "tare_offset": -141454,
-        "garmmar": 2,
+        "reference_unit": 408,
+        "tare_offset": -13938,
+        "gamma": 2,
         "expect_times": 2,
         "normal_times": 3,
-        "measure_interval": 2.0
+        "measure_interval": 2.0,
+        "auto_tare": true,
+        "sample_count": 10,
+        "stabilization_time": 2
     },
     "camera": {
         "camera_id": 0,
         "width": 640,
         "height": 480,
-        "fps": 10
+        "fps": 10,
+        "auto_orient": true,
+        "save_dir": "./webphoto",
+        "capture_count": 3,
+        "capture_interval": 0.5,
+        "source": "web"
     },
     "button": {
         "pin": 25,
-        "bounce_time": 0.1
+        "bounce_time": 0.1,
+        "feed_duration": 2.0,
+        "multi_click": false,
+        "long_press_time": 1.0
     },
     "servo": {
         "horizontal_pin": 24,
         "vertical_pin": 23,
         "step": 0.1,
         "min_pulse": 0.0005,
-        "max_pulse": 0.0025
+        "max_pulse": 0.0025,
+        "home_position": {
+            "horizontal": 90,
+            "vertical": 90
+        },
+        "move_speed": 0.05,
+        "auto_home": true
+    },
+    "feed_motor": {
+        "pin": 18,
+        "feed_duration": 2.0,
+        "reverse": false,
+        "speed": 100
+    },
+    "auto_feeder": {
+        "enabled": true,
+        "timezone": "Asia/Shanghai",
+        "check_interval": 60,
+        "feed_confirm": true,
+        "max_feeds_per_day": 10
+    },
+    "web": {
+        "host": "0.0.0.0",
+        "port": 5000,
+        "debug": false,
+        "secret_key": "coco-pet-secret-key-change-in-production",
+        "upload_folder": "./webphoto",
+        "max_upload_size": 16777216,
+        "session_timeout": 3600,
+        "cors_enabled": true
+    },
+    "database": {
+        "path": "./eating_records.db",
+        "backup_enabled": true,
+        "backup_interval": 86400,
+        "backup_dir": "./backups",
+        "max_backups": 30
     }
 }

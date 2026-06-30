@@ -48,7 +48,7 @@ class maoDB:
             cursor.execute("""
                 SELECT *
                 FROM eating_records 
-                WHERE begin_weight >= end_weight
+                WHERE begin_weight > end_weight
                 ORDER BY begin_time
             """)
             return [dict(row) for row in cursor.fetchall()]

@@ -62,7 +62,7 @@ class VideoStream:
             if ret:
                 with self.lock:                   
                     self.frame = img
-            time.sleep(0.01)  # 降频，减少CPU
+            time.sleep(0.05)  # 降频，减少CPU
     
     def stop(self, source='web'):
         """停止（只有当没有客户端和自动检测时才真正停止摄像头）

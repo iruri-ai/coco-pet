@@ -13,7 +13,7 @@ class Hx711:
                  sck_pin: int = 40,
                  dt_pin: int = 38, 
                  reference_unit: float = 413,
-                 tare_offset: int = -141454,
+                 tare_offset: int = -139388,
                  garmmar: int = 2,
                  expect_times: int = 2,
                  normal_times: int = 3,
@@ -47,6 +47,7 @@ class Hx711:
         
         # 暂停控制
         self._paused = False
+        self.admit = False  # 是否允许测量，外部控制
 
         # 初始化硬件
         self.setup()
@@ -89,6 +90,7 @@ class Hx711:
         恢复测量
         """
         self._paused = False
+        self.admit = True  # 恢复后允许测量
         print("Hx711 已恢复")
     
     def is_paused(self):
@@ -151,7 +153,6 @@ class Hx711:
         
         if value & 0x800000:
             value = value - 0x1000000
-            
         return value
     
     def _read_weight_once(self) -> float:
@@ -159,6 +160,7 @@ class Hx711:
         raw_value = self._read_raw_value()
         weight = (raw_value - self.tare_offset) / self.reference_unit
         weight = max(0.0, weight)  
+        # print(raw_value, weight, self.tare_offset, self.reference_unit)
         if self._on_measure:
             self._on_measure(weight, datetime.now()) 
         print(weight)     
@@ -171,7 +173,11 @@ class Hx711:
             new_weight = self._read_weight_once()
             self.current_weight = new_weight
             return
-        
+        if self.admit:
+            self.last_normal = self.current_weight
+            self.last_normal_time = datetime.now()
+            self.admit = False  
+
         new_weight = self._read_weight_once()
         # 本次是否变化过大
         if abs(self.current_weight - new_weight) > self.garmmar:

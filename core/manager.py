@@ -462,7 +462,7 @@ class Manager:
     
     def _on_weight_normal(self, current_weight, current_time):
         """重量恢复正常回调"""
-        if 'begin_time' in self.new_log and 'begin_weight' in self.new_log:
+        if 'begin_time' in self.new_log and 'begin_weight' in self.new_log and self.new_log['begin_weight'] > self.new_log.get('end_weight', -1):
             self.new_log['end_time'] = current_time
             self.new_log['end_weight'] = current_weight
             self.log_history.append(self.new_log)
